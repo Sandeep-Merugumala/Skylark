@@ -195,7 +195,7 @@ def run_agent(messages: list[dict]) -> Generator[str, None, None]:
         max_tool_rounds = 8
         for _ in range(max_tool_rounds):
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-3.6-flash",
                 contents=history,
                 config=config,
             )

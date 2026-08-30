@@ -259,7 +259,7 @@ with st.sidebar:
         • Work Orders board (live)<br>
         • Deals pipeline board (live)<br><br>
         <b>Model</b><br>
-        Gemini 2.0 Flash<br><br>
+        Gemini 3.6 Flash<br><br>
         <b>Note</b><br>
         All data fetched live from monday.com. 
         Numbers include data-quality caveats where applicable.
