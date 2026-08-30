@@ -177,7 +177,7 @@ def run_agent(messages: list[dict]) -> Generator[str, None, None]:
             break
 
     if not last_user_msg:
-        yield "Please ask a question."
+        yield {"type": "message", "content": "Please ask a question."}
         return
 
     try:
@@ -194,6 +194,7 @@ def run_agent(messages: list[dict]) -> Generator[str, None, None]:
 
         max_tool_rounds = 8
         for _ in range(max_tool_rounds):
+            yield {"type": "status", "content": "Analyzing request..."}
             response = client.models.generate_content(
                 model="gemini-3.6-flash",
                 contents=history,
@@ -202,7 +203,7 @@ def run_agent(messages: list[dict]) -> Generator[str, None, None]:
 
             candidate = response.candidates[0] if response.candidates else None
             if not candidate:
-                yield "(No response — please try again.)"
+                yield {"type": "message", "content": "(No response — please try again.)"}
                 return
 
             # Add model response to history
@@ -220,7 +221,7 @@ def run_agent(messages: list[dict]) -> Generator[str, None, None]:
                     p.text for p in candidate.content.parts
                     if hasattr(p, "text") and p.text
                 )
-                yield text or "(No response — please try rephrasing.)"
+                yield {"type": "message", "content": text or "(No response — please try rephrasing.)"}
                 return
 
             # Execute tool calls and collect results
@@ -229,6 +230,8 @@ def run_agent(messages: list[dict]) -> Generator[str, None, None]:
                 fc = part.function_call
                 func_name = fc.name
                 func_args = dict(fc.args) if fc.args else {}
+                
+                yield {"type": "status", "content": f"Calling tool: `{func_name}`"}
 
                 tool_func = TOOL_FUNCTIONS.get(func_name)
                 if tool_func is None:
@@ -253,16 +256,13 @@ def run_agent(messages: list[dict]) -> Generator[str, None, None]:
                 genai_types.Content(role="user", parts=tool_results)
             )
 
-        yield (
-            "⚠️ The agent reached its maximum tool-call limit. "
-            "Try rephrasing or narrowing your question."
-        )
+        yield {"type": "message", "content": "⚠️ The agent reached its maximum tool-call limit. Try rephrasing or narrowing your question."}
 
     except Exception as e:
         err = str(e)
         if "api_key" in err.lower() or "401" in err or "invalid" in err.lower():
-            yield "⚠️ **API key error:** Gemini API key is invalid or expired."
+            yield {"type": "message", "content": "⚠️ **API key error:** Gemini API key is invalid or expired."}
         elif "quota" in err.lower() or "429" in err or "resource_exhausted" in err.lower():
-            yield "⚠️ **Rate limit hit.** Please wait a moment and try again."
+            yield {"type": "message", "content": "⚠️ **Rate limit hit.** Please wait a moment and try again. Alternatively, upgrade your Google AI Studio plan to Pay-as-you-go to increase limits."}
         else:
-            yield f"⚠️ **Agent error:** {err}"
+            yield {"type": "message", "content": f"⚠️ **Agent error:** {err}"}

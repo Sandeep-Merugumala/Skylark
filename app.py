@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 load_dotenv()  # loads .env in local dev; no-op in production
 
 from agent.llm import run_agent, reset_chat
-from monday.client import get_me
+from monday.client import get_me, get_board
 
 # ── Page config ─────────────────────────────────────────────────────────────
 
@@ -198,6 +198,27 @@ with st.sidebar:
         status_code, status_msg = st.session_state.monday_status
         if status_code == "ok":
             st.markdown(f'<div class="status-pill status-connected">● {status_msg}</div>', unsafe_allow_html=True)
+            
+            st.markdown("<hr style='margin: 10px 0; border-color: #333;'>", unsafe_allow_html=True)
+            st.markdown("<div style='color:#ECECEC; font-size:14px; font-weight:600; margin-bottom: 10px;'>Live Overview</div>", unsafe_allow_html=True)
+            
+            try:
+                # Fetch metrics from cached board data
+                deals_id = st.secrets.get("DEALS_BOARD_ID", os.environ.get("DEALS_BOARD_ID"))
+                wo_id = st.secrets.get("WORK_ORDERS_BOARD_ID", os.environ.get("WORK_ORDERS_BOARD_ID"))
+                
+                if deals_id:
+                    deals_board = get_board(deals_id)
+                    total_deals = len(deals_board.get("all_items", []))
+                    st.metric("Pipeline Deals", total_deals)
+                    
+                if wo_id:
+                    wo_board = get_board(wo_id)
+                    total_wo = len(wo_board.get("all_items", []))
+                    st.metric("Work Orders", total_wo)
+            except Exception:
+                pass
+                
         else:
             st.markdown(f'<div class="status-pill status-error">⚠ Connection Error</div>', unsafe_allow_html=True)
     
@@ -281,15 +302,27 @@ if prompt:
         st.markdown(prompt)
 
     with st.chat_message("assistant", avatar=logo_path if os.path.exists(logo_path) else None):
-        with st.spinner("Thinking..."):
-            try:
-                reply_parts = list(run_agent(st.session_state.messages))
-                reply = reply_parts[-1] if reply_parts else "(No response)"
-            except Exception as e:
-                reply = (
-                    f"⚠️ **Agent error:** {str(e)}\n\n"
-                    "Please check your API keys and Board IDs."
-                )
+        status_container = st.status("Analyzing business data...", expanded=True)
+        reply = ""
+        
+        try:
+            for part in run_agent(st.session_state.messages):
+                if isinstance(part, dict):
+                    if part.get("type") == "status":
+                        status_container.write(f"🔄 {part['content']}")
+                    elif part.get("type") == "message":
+                        reply = part["content"]
+                else:
+                    reply = part  # Fallback
+                    
+            status_container.update(label="Analysis complete", state="complete", expanded=False)
+        except Exception as e:
+            status_container.update(label="Error", state="error", expanded=True)
+            reply = (
+                f"⚠️ **Agent error:** {str(e)}\n\n"
+                "Please check your API keys and Board IDs."
+            )
+            
         st.markdown(reply)
 
     st.session_state.messages.append({"role": "assistant", "content": reply})
