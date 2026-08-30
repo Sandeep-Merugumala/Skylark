@@ -38,17 +38,6 @@ st.markdown(
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-        background-color: #212121 !important;
-        color: #ECECEC !important;
-    }
-
-    /* Override main app background */
-    .stApp {
-        background-color: #212121 !important;
-    }
-
     /* Chat Messages styling */
     [data-testid="stChatMessage"] {
         background-color: transparent;
@@ -57,7 +46,7 @@ st.markdown(
     }
     
     [data-testid="stChatMessage"][data-testid*="user"] {
-        background-color: #2f2f2f;
+        background-color: var(--secondary-background-color);
         border-radius: 16px;
         padding: 1rem;
         margin-left: auto;
@@ -69,24 +58,6 @@ st.markdown(
     [data-testid="stChatMessageAvatar"] {
         border-radius: 50% !important;
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-
-    /* Chat Input styling */
-    [data-testid="stChatInput"] {
-        background-color: #212121 !important;
-        padding-bottom: 20px;
-    }
-    [data-testid="stChatInput"] textarea {
-        background-color: #2f2f2f !important;
-        border: 1px solid #424242 !important;
-        border-radius: 24px !important;
-        color: #ECECEC !important;
-        padding: 14px 20px !important;
-        font-size: 15px !important;
-    }
-    [data-testid="stChatInput"] textarea:focus {
-        border-color: #63b3ed !important;
-        box-shadow: 0 0 0 1px #63b3ed !important;
     }
 
     /* Empty state hero styling */
@@ -275,8 +246,14 @@ if len(st.session_state.messages) == 0:
 
 # Render Chat History
 for msg in st.session_state.messages:
-    # Use logo for assistant, default for user
-    avatar = logo_path if msg["role"] == "assistant" and os.path.exists(logo_path) else None
+    # Use logo for assistant, custom emoji for user
+    if msg["role"] == "assistant" and os.path.exists(logo_path):
+        avatar = logo_path
+    elif msg["role"] == "user":
+        avatar = "👤"
+    else:
+        avatar = None
+        
     with st.chat_message(msg["role"], avatar=avatar):
         st.markdown(msg["content"])
 
@@ -289,7 +266,7 @@ if st.session_state.pending_query and not prompt:
 
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar="👤"):
         st.markdown(prompt)
 
     with st.chat_message("assistant", avatar=logo_path if os.path.exists(logo_path) else None):
