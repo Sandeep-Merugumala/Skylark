@@ -303,7 +303,7 @@ with col_main:
         with st.chat_message("assistant"):
             with st.spinner("Checking monday.com boards..."):
                 try:
-                    reply_parts = list(run_agent(st.session_state.messages[:-0]))
+                    reply_parts = list(run_agent(st.session_state.messages))
                     reply = reply_parts[-1] if reply_parts else "(No response)"
                 except Exception as e:
                     reply = (
