@@ -2,8 +2,8 @@
 
 A **conversational business-intelligence agent** that answers founder-level questions by querying two live monday.com boards — **Work Orders** and **Deals** — dynamically, never from a hardcoded CSV.
 
-**Live demo →** *(add Streamlit Cloud URL after deployment)*  
-**GitHub →** *(add repo URL)*
+**Live demo →** https://skylark-t7jx87rpblsnkotwhajcvc.streamlit.app/  
+**GitHub →** https://github.com/Sandeep-Merugumala/Skylark
 
 ---
 
