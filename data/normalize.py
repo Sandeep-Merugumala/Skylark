@@ -97,14 +97,37 @@ SECTOR_ALIASES: dict[str, str] = {
 }
 
 
+try:
+    from rapidfuzz import process, fuzz
+    _HAS_RAPIDFUZZ = True
+except ImportError:
+    _HAS_RAPIDFUZZ = False
+
+KNOWN_SECTORS = [
+    "Energy", "Renewables", "Mining", "Powerline", "Railways", 
+    "Construction", "DSP", "Tender", "Security & Surveillance", 
+    "Aviation", "Manufacturing", "Others"
+]
+
 def normalize_sector(raw: Any) -> str:
-    """Return a canonical sector name from any messy raw value."""
+    """Return a canonical sector name from any messy raw value, using fuzzy matching."""
     if raw is None or (isinstance(raw, str) and not raw.strip()):
         return "Unspecified"
     key = str(raw).strip().lower()
     if key in ("nan", "none", "n/a", "-", ""):
         return "Unspecified"
-    return SECTOR_ALIASES.get(key, str(raw).strip().title())
+        
+    if key in SECTOR_ALIASES:
+        return SECTOR_ALIASES[key]
+        
+    raw_clean = str(raw).strip()
+    if _HAS_RAPIDFUZZ:
+        # 80% similarity threshold
+        match = process.extractOne(raw_clean, KNOWN_SECTORS, scorer=fuzz.ratio)
+        if match and match[1] >= 80:
+            return match[0]
+            
+    return raw_clean.title()
 
 
 # ── Deal stage normalization ────────────────────────────────────────────────

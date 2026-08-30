@@ -245,7 +245,7 @@ if len(st.session_state.messages) == 0:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Render Chat History
-for msg in st.session_state.messages:
+for i, msg in enumerate(st.session_state.messages):
     # Use logo for assistant, custom emoji for user
     if msg["role"] == "assistant" and os.path.exists(logo_path):
         avatar = logo_path
@@ -256,6 +256,17 @@ for msg in st.session_state.messages:
         
     with st.chat_message(msg["role"], avatar=avatar):
         st.markdown(msg["content"])
+        
+        # If it's the last message and it's from the assistant, offer a download option
+        if msg["role"] == "assistant" and i == len(st.session_state.messages) - 1:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.download_button(
+                label="📥 Download Report (.md)",
+                data=msg["content"],
+                file_name="skylark_leadership_update.md",
+                mime="text/markdown",
+                key=f"download_{i}"
+            )
 
 # Handle Input
 prompt = st.chat_input("Message Skylark...")

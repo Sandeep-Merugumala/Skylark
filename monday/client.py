@@ -104,8 +104,9 @@ query ($boardId: [ID!]!, $cursor: String!) {
 """
 
 
+@st.cache_data(ttl=300, show_spinner=False)
 def get_board(board_id: int | str) -> dict:
-    """Fetch full board: schema + all items (handles pagination)."""
+    """Fetch full board: schema + all items (handles pagination). Caches for 5 minutes."""
     data = monday_query(_BOARD_QUERY, {"boardId": [str(board_id)]})
     if not data.get("boards"):
         raise RuntimeError(f"Board {board_id} not found or not accessible.")
