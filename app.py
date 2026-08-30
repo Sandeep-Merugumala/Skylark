@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 
 load_dotenv()  # loads .env in local dev; no-op in production
 
-from agent.llm import run_agent
+from agent.llm import run_agent, reset_chat
 from monday.client import get_me
 
 # ── Page config ─────────────────────────────────────────────────────────────
@@ -248,6 +248,7 @@ with st.sidebar:
     # Clear chat
     if st.button("🗑️ Clear conversation", key="clear_chat"):
         st.session_state.messages = []
+        reset_chat()  # also resets the Gemini chat session
         st.rerun()
 
     st.markdown("---")
@@ -258,7 +259,7 @@ with st.sidebar:
         • Work Orders board (live)<br>
         • Deals pipeline board (live)<br><br>
         <b>Model</b><br>
-        Claude Sonnet 4.5<br><br>
+        Gemini 2.0 Flash<br><br>
         <b>Note</b><br>
         All data fetched live from monday.com. 
         Numbers include data-quality caveats where applicable.

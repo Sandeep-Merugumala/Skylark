@@ -451,86 +451,14 @@ def cross_reference(
         return json.dumps({"error": str(e), "data_quality_notes": []})
 
 
-# ── Tool definitions for Claude API ───────────────────────────────────────
 
-TOOLS = [
-    {
-        "name": "query_deals",
-        "description": (
-            "Fetch deals from the live Deals pipeline board, optionally filtered by sector, "
-            "stage, status, time period (quarter/year), or owner. Returns deal list, summary stats, "
-            "and data quality notes. Use this for pipeline questions."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "sector": {"type": "string", "description": "Sector filter (e.g. 'Mining', 'Renewables', 'Powerline')."},
-                "stage": {"type": "string", "description": "Deal stage filter (e.g. 'Proposal Sent', 'Negotiations', 'Work Order Received')."},
-                "deal_status": {"type": "string", "description": "Status filter: 'Open', 'Won', 'Dead', 'On Hold'."},
-                "quarter": {"type": "string", "description": "Quarter filter: 'Q1', 'Q2', 'Q3', 'Q4', 'this quarter', 'last quarter'."},
-                "year": {"type": "integer", "description": "Year for quarter filter (e.g. 2025)."},
-                "owner_code": {"type": "string", "description": "Owner/BD code (e.g. 'OWNER_001')."},
-            },
-            "required": [],
-        },
-    },
-    {
-        "name": "query_work_orders",
-        "description": (
-            "Fetch work orders from the live Work Orders execution board, optionally filtered. "
-            "Returns order list, financial summary, status breakdown, and data quality notes. "
-            "Use this for operational / delivery questions."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "sector": {"type": "string", "description": "Sector filter (e.g. 'Mining', 'Railways')."},
-                "execution_status": {"type": "string", "description": "Execution status filter (e.g. 'Completed', 'Ongoing', 'Paused')."},
-                "quarter": {"type": "string", "description": "Time window: 'Q1', 'Q2', 'Q3', 'Q4', 'this quarter', 'last quarter'."},
-                "year": {"type": "integer", "description": "Year for quarter filter."},
-                "invoice_status": {"type": "string", "description": "Invoice status filter (e.g. 'Fully Billed', 'Partially Billed', 'Not billed yet')."},
-                "wo_status": {"type": "string", "description": "WO billing status: 'Open' or 'Closed'."},
-            },
-            "required": [],
-        },
-    },
-    {
-        "name": "get_field_values",
-        "description": (
-            "Discover the actual distinct values present in a column of either board. "
-            "Use this before filtering when unsure about exact spellings/casing of sectors, "
-            "stages, or statuses. Prevents filter misses due to inconsistent naming."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "board": {"type": "string", "description": "Which board: 'deals' or 'work_orders'."},
-                "field_title": {"type": "string", "description": "Column title to inspect (e.g. 'Sector/service', 'Deal Stage', 'Execution Status')."},
-            },
-            "required": ["board", "field_title"],
-        },
-    },
-    {
-        "name": "cross_reference",
-        "description": (
-            "Join Deals and Work Orders boards on shared sector/client codes. "
-            "Use for questions that span both boards: e.g. 'which sectors have active deals "
-            "AND active work orders?' or 'show me the full picture for Mining sector'."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "sector": {"type": "string", "description": "Optional sector to scope the cross-reference."},
-                "client_code": {"type": "string", "description": "Optional client code to match on."},
-            },
-            "required": [],
-        },
-    },
-]
-
-TOOL_FUNCTIONS = {
-    "query_deals": query_deals,
-    "query_work_orders": query_work_orders,
-    "get_field_values": get_field_values,
-    "cross_reference": cross_reference,
-}
+# ── Gemini uses Python functions directly ──────────────────────────────────
+#
+# Unlike the Anthropic API which requires a manual JSON schema dict,
+# Gemini's google-generativeai SDK auto-generates tool schemas from
+# Python function signatures and docstrings.
+#
+# Pass these functions directly to GenerativeModel(tools=[...]):
+#   query_deals, query_work_orders, get_field_values, cross_reference
+#
+# See agent/llm.py for usage.
