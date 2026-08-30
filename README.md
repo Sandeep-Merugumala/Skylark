@@ -30,7 +30,7 @@ The agent:
 skylark-bi-agent/
 ├── app.py                  # Streamlit chat UI + session management
 ├── agent/
-│   ├── llm.py              # Claude tool-calling loop
+│   ├── llm.py              # Gemini tool-calling loop
 │   ├── tools.py            # 4 tool functions exposed to the LLM
 │   └── prompts.py          # Dynamic system prompt (injects live board schema)
 ├── monday/
@@ -48,7 +48,7 @@ skylark-bi-agent/
 | Decision | Choice | Why |
 |---|---|---|
 | UI + Backend | Single Streamlit app | Removes CORS / two-deploy overhead in a 5–6h window |
-| LLM | Claude Sonnet 4.5 | Strong tool-calling, good reasoning over semi-structured data |
+| LLM | Gemini 3.6 Flash | Strong tool-calling, excellent reasoning, required by the user |
 | monday.com integration | Direct GraphQL API | Simpler auth surface than MCP for a time-boxed build |
 | Tool count | 4 focused tools | Fewer tools = less ambiguity for the model |
 | Data cleaning | In normalization layer, not on import | Preserves real-world messiness for agent to handle |
@@ -67,12 +67,12 @@ cross_reference      — Join both boards by shared sector/client codes
 ```
 User message
      ↓
-Claude API (with TOOLS + live schema in system prompt)
-     ↓ stop_reason = "tool_use"
+Gemini API (with TOOLS + live schema in system prompt)
+     ↓ Stop reason = function_call
 Run Python tool function(s)
      ↓
-Send tool_result(s) back to Claude
-     ↓ stop_reason = "end_turn"
+Send tool_result(s) back to Gemini
+     ↓ Stop reason = stop
 Stream final text reply to UI
 ```
 
@@ -98,7 +98,7 @@ Every response that uses filtered data also includes a "Data Quality Notes" sect
 
 - Python 3.10+
 - A monday.com account with two boards set up (see below)
-- An Anthropic API key
+- A Google Gemini API key
 
 ### 1. Clone and install
 
@@ -120,7 +120,7 @@ pip install -r requirements.txt
 ```bash
 cp .env.example .env
 # Edit .env with your values:
-# ANTHROPIC_API_KEY=sk-ant-...
+# GEMINI_API_KEY=AIza...
 # MONDAY_API_TOKEN=...
 # WORK_ORDERS_BOARD_ID=...
 # DEALS_BOARD_ID=...
@@ -141,7 +141,7 @@ streamlit run app.py
 3. Add secrets in **Settings → Secrets**:
 
 ```toml
-ANTHROPIC_API_KEY = "sk-ant-..."
+GEMINI_API_KEY = "AIza..."
 MONDAY_API_TOKEN = "..."
 WORK_ORDERS_BOARD_ID = "123456789"
 DEALS_BOARD_ID = "987654321"
@@ -169,7 +169,7 @@ DEALS_BOARD_ID = "987654321"
 
 ### ✅ Completed
 - Live monday.com GraphQL integration (auth, pagination, error handling)
-- 4-tool agent with Claude Sonnet 4.5
+- 4-tool agent with Gemini 3.6 Flash
 - Data normalization for dates, sectors, deal stages, amounts
 - Cross-board analysis
 - Clarifying-question behavior (via system prompt)
@@ -177,12 +177,13 @@ DEALS_BOARD_ID = "987654321"
 - Data-quality transparency (never silent about bad data)
 - Dark-themed Streamlit UI with quick-action sidebar
 - Dynamic system prompt with live board schema
+- **[Bonus] Fuzzy matching**: Uses `rapidfuzz` to algorithmically map messy categorical data
+- **[Bonus] Caching**: `@st.cache_data` applied to API calls for instant repeat query performance
+- **[Bonus] Downloadable Reports**: Exports leadership summaries directly to Markdown
 
 ### 🔲 Not done / would improve with more time
 - **MCP integration**: monday.com publishes an official MCP server; swapping the tool layer to call it is a clean, contained change — documented as the preferred production path in DECISION_LOG.md
-- **Fuzzy matching**: `rapidfuzz` for near-duplicate sector names the alias table doesn't catch
-- **Response streaming**: stream Claude's output token-by-token rather than buffering the full response
-- **Caching**: in-memory TTL cache for repeated monday.com queries within a session
+- **Response streaming**: stream output token-by-token rather than buffering the full response
 - **Unit tests**: normalize functions are pure and easy to test — skipped for time
 - **Auth/multi-user**: Streamlit Community Cloud is public; a production version would need user auth
 
@@ -191,7 +192,7 @@ DEALS_BOARD_ID = "987654321"
 ## AI Tools Used
 
 - **Antigravity (Google DeepMind)** — primary coding assistant for scaffolding, code generation, and architecture decisions
-- **Claude** — both as the runtime agent LLM and for drafting system prompts and documentation
+- **Gemini** — both as the runtime agent LLM and for drafting system prompts and documentation
 
 ---
 
